@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>HBD My Love!</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body, html {
+            width: 100%; height: 100%; overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0c0813;
+            touch-action: none; position: relative;
+            user-select: none; -webkit-user-select: none;
+        }
+
+        #hbd-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 20; 
+            background: radial-gradient(circle at center, #1b0c24 0%, #07030a 100%);
+            transition: opacity 0.8s ease;
+        }
+
+        .heart-bg {
+            position: absolute; color: rgba(255, 77, 109, 0.2);
+            animation: floatHeart 15s linear infinite; z-index: 1;
+            filter: drop-shadow(0 0 8px rgba(255, 77, 109, 0.4));
+        }
+        .heart-bg:nth-child(1) { left: 10%; font-size: 30px; animation-duration: 20s; }
+        .heart-bg:nth-child(2) { left: 20%; font-size: 20px; animation-delay: 2s; animation-duration: 18s; }
+        .heart-bg:nth-child(3) { left: 35%; font-size: 40px; animation-delay: 4s; animation-duration: 25s; }
+        .heart-bg:nth-child(4) { left: 50%; font-size: 15px; animation-delay: 0s; animation-duration: 12s; }
+        .heart-bg:nth-child(5) { left: 65%; font-size: 35px; animation-delay: 3s; animation-duration: 22s; }
+        .heart-bg:nth-child(6) { left: 80%; font-size: 25px; animation-delay: 5s; animation-duration: 19s; }
+        .heart-bg:nth-child(7) { left: 90%; font-size: 30px; animation-delay: 1s; animation-duration: 16s; }
+
+        @keyframes floatHeart {
+            0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-20vh) rotate(360deg); opacity: 0; }
+        }
+
+        #main-card {
+            text-align: center; background: rgba(20, 10, 30, 0.65);
+            padding: 30px; border-radius: 30px; border: 1px solid rgba(255, 77, 109, 0.25);
+            backdrop-filter: blur(15px); box-shadow: 0 0 35px rgba(255, 77, 109, 0.2);
+            width: 85%; max-width: 340px; z-index: 5;
+            position: relative;
+        }
+        #main-card h1 { 
+            color: #ff4d6d; font-size: 24px; font-weight: bold; margin-bottom: 8px;
+            text-shadow: 0 0 15px rgba(255, 77, 109, 0.8), 0 0 2px #fff;
+        }
+        #sub-text { color: #d8b4f8; font-size: 15px; margin-bottom: 5px; text-shadow: 0 0 8px rgba(216, 180, 248, 0.4); }
+        .gift-img { width: 140px; margin: 15px 0; border-radius: 15px; filter: drop-shadow(0 0 15px rgba(181, 23, 158, 0.4)); }
+        
+        .btn-group { 
+            margin-top: 20px; display: flex; flex-direction: column; 
+            align-items: center; width: 100%; position: relative;
+        }
+        
+        button { 
+            padding: 12px 25px; font-size: 16px; border-radius: 50px; border: none; 
+            cursor: pointer; font-weight: bold; -webkit-tap-highlight-color: transparent; 
+        }
+        #yesBtn {
+            background: linear-gradient(45deg, #ff4d6d, #b5179e); color: white; 
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            white-space: normal; width: 100%; max-width: 240px; line-height: 1.4;
+            box-shadow: 0 0 20px rgba(255, 77, 109, 0.6); z-index: 6;
+        }
+        
+        /* แก้ไขสไตล์ตรงนี้: ล็อกให้อยู่ใต้ปุ่มรักแน่ๆ ตั้งแต่แรกด้วยตำแหน่งกึ่งกลาง */
+        #noBtn { 
+            position: absolute;
+            bottom: -55px; left: 50%;
+            transform: translateX(-50%);
+            background-color: #251635; color: #7f6396; border: 1px solid rgba(255,255,255,0.05);
+            width: 140px; transition: all 0.15s ease; z-index: 9999;
+        }
+
+        #loader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(125deg, #050508, #120b24, #1a0815, #050508);
+            background-size: 400% 400%; animation: nebulaBackground 8s ease infinite;
+            display: flex; flex-direction: column; justify-content: center; align-items: center; 
+            z-index: 30; opacity: 0; pointer-events: none;
+            transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes nebulaBackground {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .vector-heart-main {
+            font-size: 100px;
+            background: linear-gradient(135deg, #ff4d6d, #b5179e, #ff85a2);
+            background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            display: inline-block; margin-bottom: 20px; animation: shineText 3s linear infinite;
+            filter: drop-shadow(0 0 25px rgba(255, 77, 109, 0.8)); transition: transform 0.1s ease;
+        }
+        .pressing .vector-heart-main { animation: beatFast 0.4s infinite alternate cubic-bezier(0.25, 0.8, 0.25, 1), shineText 3s linear infinite; }
+        @keyframes beatFast { 0% { transform: scale(1); } 100% { transform: scale(1.3); filter: drop-shadow(0 0 45px #ff4d6d); } }
+        @keyframes shineText { to { background-position: 200% center; } }
+
+        #progress-text { 
+            color: #fff; font-size: 22px; letter-spacing: 4px; font-weight: bold; margin-bottom: 10px; 
+            text-shadow: 0 0 15px rgba(255, 77, 109, 0.8);
+        }
+        #hint-text { color: #b5179e; font-size: 14px; margin-bottom: 25px; letter-spacing: 2px; text-shadow: 0 0 8px rgba(181, 23, 158, 0.5); }
+        
+        #charge-pad {
+            width: 130px; height: 130px; border-radius: 50%;
+            background: radial-gradient(circle, #ff4d6d 0%, #b5179e 100%);
+            border: 4px solid rgba(255, 255, 255, 0.2); color: white; font-weight: bold; font-size: 16px;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 0 30px rgba(255, 77, 109, 0.5); cursor: pointer; -webkit-tap-highlight-color: transparent;
+            transition: all 0.2s ease; margin-bottom: 30px;
+        }
+        #charge-pad:active, .pressing #charge-pad { transform: scale(0.92); box-shadow: 0 0 50px #ff4d6d; border-color: rgba(255, 255, 255, 0.6); }
+
+        .progress-container { width: 280px; height: 8px; background: rgba(255,255,255,0.06); border-radius: 10px; padding: 1px; }
+        .progress-bar { width: 0%; height: 100%; background: linear-gradient(90deg, #ff4d6d, #b5179e, #7209b7); border-radius: 10px; box-shadow: 0 0 20px #ff4d6d; transition: width 0.1s linear; }
+
+        #canvas-container { width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1; display: none; }
+        
+        #text-overlay {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -40%); color: white;
+            text-align: center; pointer-events: none; opacity: 0; z-index: 5; width: 90%; transition: all 1.5s ease;
+        }
+        .fade-in-up { animation: fadeInUp 2.5s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
+        @keyframes fadeInUp { to { opacity: 1; transform: translate(-50%, -50%); } }
+        
+        #text-overlay h2 { font-size: 2.2rem; color: #ff4d6d; text-shadow: 0 0 25px rgba(255,77,109,1), 0 0 5px #fff, 0 0 50px #b5179e; margin-bottom: 15px; letter-spacing: 2px; }
+        #text-overlay p { font-size: 1.1rem; color: #fff; text-shadow: 0 0 15px rgba(255,255,255,0.6); font-weight: 300; line-height: 1.6; }
+
+        .sparkle-heart {
+            position: absolute; pointer-events: none; z-index: 2; opacity: 0; display: inline-block;
+            background: linear-gradient(135deg, #ff4d6d, #ff85a2, #b5179e, #fff); background-size: 200% 200%; aspect-ratio: 1;
+            -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.5 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z'/></svg>") center/contain no-repeat;
+            mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.5 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z'/></svg>") center/contain no-repeat;
+            animation: floatAndShine linear forwards, gradientShift 3s linear infinite;
+        }
+        @keyframes floatAndShine {
+            0% { transform: translateY(105vh) scale(0.3) rotate(0deg); opacity: 0; }
+            15% { opacity: 1; filter: drop-shadow(0 0 12px var(--glow)) brightness(1.5); }
+            85% { opacity: 1; }
+            100% { transform: translateY(-15vh) scale(1.1) rotate(25deg); opacity: 0; }
+        }
+
+        @keyframes gradientShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+
+        .heart-sparkle-child { position: absolute; pointer-events: none; z-index: 2; border-radius: 50%; background: #fff; animation: particleFade 0.8s cubic-bezier(0.1, 0.8, 0.3, 1) forwards; }
+        @keyframes particleFade { 0% { transform: translate(0, 0) scale(1); opacity: 1; } 100% { transform: translate(var(--mx), var(--my)) scale(0); opacity: 0; } }
+
+        .floating-text {
+            position: absolute; pointer-events: none; z-index: 3; color: #fff; font-size: 1rem; padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; backdrop-filter: blur(5px);
+            animation: floatGlowStay 4s cubic-bezier(0.175, 0.885, 0.32, 1.1) forwards; white-space: nowrap; opacity: 0;
+        }
+        @keyframes floatGlowStay { 0% { transform: translateY(40vh) scale(0.6); opacity: 0; } 100% { transform: translateY(0) scale(1); opacity: 0.95; } }
+    </style>
+</head>
+<body>
+
+    <!-- ==================== หน้าที่ 1: การ์ดคำถาม HBD ==================== -->
+    <div id="hbd-screen">
+        <div class="heart-bg">💖</div><div class="heart-bg">❤️</div><div class="heart-bg">💖</div>
+        <div class="heart-bg">💗</div><div class="heart-bg">❤️</div><div class="heart-bg">💖</div><div class="heart-bg">💗</div>
+        
+        <div id="main-card">
+            <h1>Happy Birthday Warunya 🎂</h1>
+            <p id="sub-text">รักกันป่าวว้าาาา? ตอบดีๆ !!!!</p>
+            <img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExYWxjNGVlejd1YnV1dWUyM2VhOXg5M3RveHV6YmxucTBxZWZoMzVsZiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/Zl7u48zLVFgLpRwq6f/giphy.gif" class="gift-img">
+            <div class="btn-group">
+                <button id="yesBtn" onclick="celebrate()">รักที่สุด! 💓</button>
+                <!-- เว้นที่หลอกไว้ข้างใต้ปุ่มรักให้ปุ่มไม่รักอยู่ตรงนี้พอดี -->
+                <div style="height: 55px; width: 100%;"></div>
+                <button id="noBtn">ไม่รัก 😭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== หน้าที่ 2: หน้าโหลดรักแบบกดค้างไว้ ==================== -->
+    <div id="loader">
+        <div class="vector-heart-main">❤</div>
+        <div id="progress-text">CHARGING LOVE 0%</div>
+        <div id="hint-text">▲ กดค้างไว้ค้าบที่รักกกกก ▲</div>
+        
+        <div id="charge-pad">กดจิๆ ❤️</div>
+        
+        <div class="progress-container">
+            <div class="progress-bar" id="bar"></div>
+        </div>
+    </div>
+
+    <!-- ==================== หน้าที่ 3: กาแล็กซี 3D สุดวิบวับปลายทาง ==================== -->
+    <div id="canvas-container"></div>
+    
+    <div id="text-overlay">
+        <h2>สุขสันต์ครบรอบ 2 เดือนค้าบบบบบบบบบบบ </h2>
+        <p>
+            เค้าขอเริ่มจาก เค้าจะปรับปรุงตัวให้ดีขึ้นนะครับจะสนใจและใส่เธอให้มากกว่านี้ จะพยายามไม่ทำให้เธอเสียใจอีกแล้ว จะเป็นคนที่ดีขึ้นและรักเธอให้มากที่สุดเท่าที่เค้าจะทำได้เลยค้าบบบบ<br>
+            และวันนี้เค้าขอโทดค้าบที่ไม่ได้ไปกินข้าวด้วย เค้าติดเกมกับเพื่อนไปหน่อย วอนที่รักให้อภัยเค้านะคั้บบบบ ขอโทษที่ไม่ใด้สนใจเธอน้าาา รักบักอ้วนตัวบวมของเค้าเสมอค้าบบบบ<br>
+            เค้าขอให้รักของเรานั้นอยู่ด้วยกันไปนานๆเค้าจะไม่ทิ้งเธอแน่นอนค้าบบ วันเสาร์นี้ไปเที่ยวสวนสนุกด้วยกันนะ พรุ้งนี้หลังเลิกเรียนด้วยแดะเค้าไปหา คิดถึงบักตัวอ้วนที่สุดดดเลย จะเลียให้ล้มเลย<br>
+            <b style="color: #ff4d6d; font-size: 1.25rem; display:inline-block; margin-top:10px;">ไม่ว่ายังไงเค้าก็รักเธอนะค้าบที่รักของเค้า จุ๊บๆ</b>
+        </p>
+    </div>
+
+    <script>
+        const noBtn = document.getElementById('noBtn');
+        const yesBtn = document.getElementById('yesBtn');
+        const hbdScreen = document.getElementById('hbd-screen');
+        const loader = document.getElementById('loader');
+        const chargePad = document.getElementById('charge-pad');
+        const progressBar = document.getElementById('bar');
+        const progressText = document.getElementById('progress-text');
+        
+        let clickCount = 0; let scale = 1;
+        let progress = 0; let chargeInterval = null; let isDone = false;
+
+        function moveNoButton() {
+            clickCount++; 
+            
+            // เปลี่ยนร่างเป็น fixed เพื่อให้สุ่มวิ่งไปได้ทั่วจอภาพแบบอิสระ
+            noBtn.style.position = 'fixed';
+            noBtn.style.transform = 'none'; // ล้างค่าสไลด์กึ่งกลางทิ้ง ป้องกันการคำนวณซ้ำซ้อน
+            
+            const viewWidth = window.innerWidth;
+            const viewHeight = window.innerHeight;
+            const btnWidth = noBtn.offsetWidth;
+            const btnHeight = noBtn.offsetHeight;
+            
+            // ล็อกขอบเขตปลอดภัยรอบขอบจอฝั่งละ 30px (ไม่ชิดจนกดไม่โดน และไม่ล้นออกข้างนอก)
+            const minX = 30;
+            const minY = 30;
+            const maxX = viewWidth - btnWidth - 30;
+            const maxY = viewHeight - btnHeight - 30;
+            
+            // ใช้คณิตศาสตร์แบบดั้งเดิมสุ่มตำแหน่งพิกเซลที่ปลอดภัยแน่ๆ
+            const randomX = Math.floor(Math.random() * (maxX - minX + 1)) + minX;
+            const randomY = Math.floor(Math.random() * (maxY - minY + 1)) + minY;
+            
+            noBtn.style.left = randomX + 'px';
+            noBtn.style.top = randomY + 'px';
+            
+            // บังคับขยายปุ่มรักให้ใหญ่ขึ้นบีบคั้นสายตา
+            scale += 0.15; 
+            yesBtn.style.transform = 'scale(' + scale + ')';
+            
+            if (clickCount >= 8) yesBtn.innerText = "ชิๆๆๆ ไม่รักแล่วววว 😭";
+            else if (clickCount >= 5) yesBtn.innerText = "จะไปหาสาวอื่นละนะถ้ายังไม่รักกัน 😠";
+            else if (clickCount >= 2) yesBtn.innerText = "ทำไม ไม่รักกันแล้วเหรอ 😢";
+        }
+        
+        // ผูก Event ให้แม่นยำทุกสัมผัส
+        noBtn.addEventListener('touchstart', (e) => { e.preventDefault(); moveNoButton(); });
+        noBtn.addEventListener('click', moveNoButton);
+
+        function celebrate() {
+            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#ff4d6d', '#ffccd5', '#ffffff'] });
+            hbdScreen.style.opacity = '0'; noBtn.style.display = 'none';
+            setTimeout(() => {
+                hbdScreen.style.display = 'none';
+                loader.style.opacity = '1'; loader.style.pointerEvents = 'auto';
+                setupHoldToCharge();
+            }, 800);
+        }
+
+        function setupHoldToCharge() {
+            function startCharging() {
+                if (isDone) return;
+                loader.classList.add('pressing');
+                clearInterval(chargeInterval);
+                chargeInterval = setInterval(() => {
+                    progress += 1.5;
+                    if (progress >= 100) {
+                        progress = 100; isDone = true;
+                        clearInterval(chargeInterval);
+                        triggerGalaxyFinal();
+                    }
+                    updateBar();
+                }, 25);
+            }
+
+            function stopCharging() {
+                if (isDone) return;
+                loader.classList.remove('pressing');
+                clearInterval(chargeInterval);
+                chargeInterval = setInterval(() => {
+                    progress -= 1;
+                    if (progress <= 0) { progress = 0; clearInterval(chargeInterval); }
+                    updateBar();
+                }, 30);
+            }
+
+            function updateBar() {
+                progressText.innerText = 'CHARGING LOVE ' + Math.floor(progress) + '%';
+                progressBar.style.width = progress + '%';
+            }
+
+            chargePad.addEventListener('mousedown', startCharging);
+            chargePad.addEventListener('mouseup', stopCharging);
+            chargePad.addEventListener('mouseleave', stopCharging);
+            chargePad.addEventListener('touchstart', (e) => { e.preventDefault(); startCharging(); });
+            chargePad.addEventListener('touchend', stopCharging);
+        }
+
+        function triggerGalaxyFinal() {
+            loader.classList.remove('pressing');
+            document.getElementById('hint-text').innerText = "COMPLETE! ❤️";
+            setTimeout(() => {
+                loader.style.opacity = '0';
+                setTimeout(() => {
+                    loader.style.display = 'none';
+                    document.getElementById('canvas-container').style.display = 'block';
+                    startSparkleEngine();
+                    
+                    const loveMessages = ["ยิ้มเยอะๆน้าที่รักของเค้า", "ขอบคุณที่โลกนี้มีเธอ", "คนเก่งของเค้า", "My Love", "รักเธอที่สุดในโลก", "อยู่เป็นความสุขของกันไปนานๆนะtt", "ชอบกวนตีนแต่รักนะค้าบ", "ไอตัวอ้วนนนนนนนน", "คิดถึงงงงงงง", "อย่าขี้เกียจเยอะ", "รักเธอแล้วรักเธออีก", "เจ้าแก้มอ้วน", "รักกัน100ปีไปเลยยย", "รักสุดหัวใจ"];
+                    const gridPositions = [{left:5,top:15},{left:18,top:25},{left:6,top:40},{left:22,top:55},{left:5,top:70},{left:16,top:85},{left:74,top:15},{left:86,top:28},{left:68,top:45},{left:84,top:60},{left:72,top:75},{left:83,top:86}].sort(() => Math.random() - 0.5);
+                    
+                    loveMessages.forEach((msg, index) => {
+                        if (index < gridPositions.length) {
+                            setTimeout(() => { createFloatingText(msg, gridPositions[index]); }, index * 350);
+                        }
+                    });
+                }, 1200);
+                document.getElementById('text-overlay').classList.add('fade-in-up');
+            }, 600);
+        }
+
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2('#020205', 0.008);
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000); camera.position.z = 35;
+        const renderer = new THREE.WebGLRenderer({ antialias: true }); renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); container.appendChild(renderer.domElement);
+
+        const particleCount = 18000; const geometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(particleCount * 3); const colors = new Float32Array(particleCount * 3);
+        const palette = [new THREE.Color("#ff4d6d"), new THREE.Color("#ff758f"), new THREE.Color("#ffccd5"), new THREE.Color("#b5179e"), new THREE.Color("#fff")];
+
+        for(let i = 0; i < particleCount; i++) {
+            const t = Math.PI * 2 * Math.random(); const u = Math.PI * (Math.random() - 0.5);
+            let x = 16 * Math.pow(Math.sin(t), 3); let y = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
+            let z = Math.sin(u) * (Math.abs(x) + Math.abs(y)) * 0.4; x *= 0.65; y *= 0.65;
+            x += (Math.random() - 0.5) * 2; y += (Math.random() - 0.5) * 2; z += (Math.random() - 0.5) * 2;
+            positions[i * 3] = x; positions[i * 3 + 1] = y; positions[i * 3 + 2] = z;
+            const pc = palette[Math.floor(Math.random() * palette.length)]; colors[i * 3] = pc.r; colors[i * 3 + 1] = pc.g; colors[i * 3 + 2] = pc.b;
+        }
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3)); geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+        const particleSystem = new THREE.Points(geometry, new THREE.PointsMaterial({ size: 0.15, vertexColors: true, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending }));
+        scene.add(particleSystem);
+
+        const starCount = 9000; const starGeometry = new THREE.BufferGeometry();
+        const starPositions = new Float32Array(starCount * 3); const starColors = new Float32Array(starCount * 3); const starFrequencies = new Float32Array(starCount);
+        for(let i = 0; i < starCount; i++) {
+            starPositions[i * 3] = (Math.random() - 0.5) * 220; starPositions[i * 3 + 1] = (Math.random() - 0.5) * 220; starPositions[i * 3 + 2] = (Math.random() - 0.6) * 160;
+            let rc = palette[Math.floor(Math.random() * palette.length)]; starColors[i * 3] = rc.r; starColors[i * 3 + 1] = rc.g; starColors[i * 3 + 2] = rc.b;
+            starFrequencies[i] = Math.random() * 0.04 + 0.01;
+        }
+        starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3)); starGeometry.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
+        const starField = new THREE.Points(starGeometry, new THREE.PointsMaterial({ size: 0.22, vertexColors: true, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending }));
+        scene.add(starField);
+        const initialStarColors = starColors.slice();
+
+        function animate() {
+            requestAnimationFrame(animate); const time = Date.now() * 0.0003;
+            particleSystem.rotation.y = time * 0.2; particleSystem.rotation.x = Math.sin(time * 0.4) * 0.15; starField.rotation.y = -time * 0.01;
+            const ca = starGeometry.getAttribute('color'); const now = Date.now();
+            for(let i = 0; i < starCount; i++) {
+                let twinkle = 0.2 + Math.abs(Math.sin(now * starFrequencies[i])) * 0.8;
+                ca.array[i * 3] = initialStarColors[i * 3] * twinkle; ca.array[i * 3 + 1] = initialStarColors[i * 3 + 1] * twinkle; ca.array[i * 3 + 2] = initialStarColors[i * 3 + 2] * twinkle;
+            }
+            ca.needsUpdate = true; renderer.render(scene, camera);
+        }
+        animate();
+
+        const glowColors = ['rgba(255,77,109,0.9)', 'rgba(181,23,158,0.8)', 'rgba(255,133,162,0.7)', 'rgba(255,255,255,0.9)'];
+        function startSparkleEngine() { setInterval(() => { createCrystalHeart(); }, 200); }
+        
+        function createCrystalHeart() {
+            const heart = document.createElement('div'); heart.classList.add('sparkle-heart');
+            const size = Math.random() * 25 + 15; heart.style.width = size + 'px'; heart.style.left = (Math.random() * 94 + 3) + 'vw';
+            const cg = glowColors[Math.floor(Math.random() * glowColors.length)]; heart.style.setProperty('--glow', cg);
+            const duration = Math.random() * 3.5 + 4.5; heart.style.animationDuration = duration + 's'; document.body.appendChild(heart);
+            const spInterval = setInterval(() => {
+                const rect = heart.getBoundingClientRect();
+                if (rect.top > 0 && rect.top < window.innerHeight) {
+                    createSparkleParticle(rect.left + rect.width/2, rect.top + rect.height/2, cg);
+                    if(Math.random() > 0.5) createSparkleParticle(rect.left + rect.width/2, rect.top + rect.height/2, '#ffffff');
+                }
+            }, 70);
+            setTimeout(() => { clearInterval(spInterval); heart.remove(); }, duration * 1000);
+        }
+
+        function createSparkleParticle(x, y, color) {
+            const p = document.createElement('div'); p.classList.add('heart-sparkle-child');
+            const pSize = Math.random() * 5 + 3; p.style.width = pSize + 'px'; p.style.height = pSize + 'px'; p.style.left = x + 'px'; p.style.top = y + 'px'; p.style.background = color;
+            p.style.setProperty('--mx', ((Math.random() - 0.5) * 45) + 'px'); p.style.setProperty('--my', ((Math.random() * 30) + 10) + 'px');
+            const pd = Math.random() * 0.6 + 0.6; p.style.animationDuration = pd + 's'; document.body.appendChild(p);
+            setTimeout(() => { p.remove(); }, pd * 1000);
+        }
+
+        function createFloatingText(textStr, pos) {
+            const txt = document.createElement('div'); txt.classList.add('floating-text'); txt.innerText = textStr;
+            txt.style.left = pos.left + 'vw'; txt.style.top = pos.top + 'vh';
+            const tc = ['#ffffff', '#ffccd5', '#ffb3c1', '#f3e5f5'][Math.floor(Math.random() * 4)]; txt.style.color = tc;
+            txt.style.fontSize = (Math.random() * 3 + 14) + 'px'; const gc = Math.random() > 0.5 ? '#ff4d6d' : '#b5179e';
+            txt.style.textShadow = '0 0 8px ' + tc + ', 0 0 15px ' + gc + '90'; txt.style.borderColor = gc + '33'; document.body.appendChild(txt);
+        }
+
+        window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+    </script>
+</body>
+</html>
